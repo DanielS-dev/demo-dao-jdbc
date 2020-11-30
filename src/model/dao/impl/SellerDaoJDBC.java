@@ -93,10 +93,47 @@ public class SellerDaoJDBC implements SellerDao{
 
 	@Override
 	public List<Seller> findAll() {
-		// TODO Auto-generated method stub
-		return null;
+		PreparedStatement st = null;
+		ResultSet rs = null;
+		
+		try {
+			st = conn.prepareStatement(""
+					+ "SELECT seller.*,department.Name as DepName " + 
+					"FROM seller INNER JOIN department " + 
+					"ON seller.DepartmentId = department.Id " + 
+					"ORDER BY Id");
+			
+			rs = st.executeQuery();
+			
+			List<Seller> sellers = instantiateSellerWithDepartment(rs);
+			
+			return sellers;
+		} catch (SQLException e) {
+			throw new DbException(e.getMessage());
+		} finally {
+			DB.closeStatement(st);
+			DB.closeResultSet(rs);
+		}
 	}
 	
+	private List<Seller> instantiateSellerWithDepartment(ResultSet rs) throws SQLException {
+		List<Seller> sellers = new ArrayList<>();
+		Map<Integer, Department> map = new HashMap<>();
+		
+		while (rs.next()) {
+			Department dep = map.get(rs.getInt("DepartmentId"));
+			
+			if (dep == null) {
+				dep = instantiateDepartment(rs);
+				map.put(dep.getId(), dep);
+			}
+			
+			Seller seller = instantiateSeller(rs, dep);
+			sellers.add(seller);
+		}
+		return sellers;
+	}
+
 	public List<Seller> findByDepartment(Integer departmentId) {
 		PreparedStatement st = null;
 		ResultSet rs = null;
@@ -112,20 +149,7 @@ public class SellerDaoJDBC implements SellerDao{
 			st.setInt(1, departmentId);
 			rs = st.executeQuery();
 			
-			List<Seller> sellers = new ArrayList<>();
-			Map<Integer, Department> map = new HashMap<>();
-			
-			while (rs.next()) {
-				Department dep = map.get(rs.getInt("DepartmentId"));
-				
-				if (dep == null){
-					dep = instantiateDepartment(rs);
-					map.put(rs.getInt("DepartmentId"), dep);
-				}
-				
-				Seller seller = instantiateSeller(rs, dep);
-				sellers.add(seller);
-			}
+			List<Seller> sellers = instantiateSellerWithDepartment(rs);
 			
 			return sellers;
 		} catch (SQLException e) {
@@ -135,5 +159,5 @@ public class SellerDaoJDBC implements SellerDao{
 			DB.closeResultSet(rs);
 		}
 	}
-	
+		
 }
