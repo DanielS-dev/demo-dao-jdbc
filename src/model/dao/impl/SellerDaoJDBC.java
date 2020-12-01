@@ -97,7 +97,7 @@ public class SellerDaoJDBC implements SellerDao{
 				conn.rollback();
 				throw new DbException("Transaction rolled back! Caused by: " + e.getMessage());
 			} catch (SQLException e1) {
-				throw new DbException("Error trying to rollback! Caused by : " + e1.getMessage());
+				throw new DbException("Error trying to rollback! Caused by: " + e1.getMessage());
 			}
 		} finally {
 			DB.closeStatement(st);
@@ -105,8 +105,29 @@ public class SellerDaoJDBC implements SellerDao{
 	}
 
 	@Override
-	public void deleteById(Seller obj) {
-		// TODO Auto-generated method stub
+	public void deleteById(Integer id) {
+		PreparedStatement st = null;
+		
+		try {
+			conn.setAutoCommit(false);
+			st = conn.prepareStatement(
+					"DELETE FROM seller " + 
+					"WHERE Id = ?");
+			
+			st.setInt(1, id);
+			
+			st.executeUpdate();
+			conn.commit();
+		} catch (SQLException e) {
+			try {
+				conn.rollback();
+				throw new DbException("Transaction rolled back! Caused by: " + e.getMessage());
+			} catch (SQLException e1) {
+				throw new DbException("Error trying to rollback! Caused by: " + e1.getMessage());
+			}
+		} finally {
+			DB.closeStatement(st);
+		}
 		
 	}
 
